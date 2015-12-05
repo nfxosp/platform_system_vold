@@ -106,6 +106,7 @@ inline int release_wake_lock(const char* id) { return 0; }
 inline int acquire_wake_lock(int lock, const char* id) { return 0; }
 #endif
 
+#ifndef MINIVOLD // no HALs in recovery...
 static int keymaster_init(keymaster0_device_t **keymaster0_dev,
                           keymaster1_device_t **keymaster1_dev)
 {
