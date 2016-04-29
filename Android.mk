@@ -39,7 +39,8 @@ common_c_includes := \
 	frameworks/native/include \
 	system/security/keystore \
 	hardware/libhardware/include/hardware \
-	system/security/softkeymaster/include/keymaster
+	system/security/softkeymaster/include/keymaster \
+	external/e2fsprogs/lib
 
 common_libraries := \
 	libsysutils \
@@ -59,7 +60,8 @@ common_shared_libraries := \
 	libcrypto \
 	libhardware \
 	libsoftkeymaster \
-	libbase
+	libbase \
+	libext2_blkid
 
 common_static_libraries := \
 	libfs_mgr \
@@ -69,6 +71,8 @@ common_static_libraries := \
 	libscrypt_static \
 	libmincrypt \
 	libbatteryservice \
+	libext2_blkid \
+	libext2_uuid_static \
 	libz
 
 vold_conlyflags := -std=c11
@@ -95,6 +99,12 @@ LOCAL_MODULE_TAGS := eng tests
 LOCAL_CFLAGS := $(vold_cflags)
 LOCAL_CONLYFLAGS := $(vold_conlyflags)
 
+ifeq ($(TARGET_HW_DISK_ENCRYPTION),true)
+TARGET_CRYPTFS_HW_PATH ?= device/qcom/common/cryptfs_hw
+LOCAL_C_INCLUDES += $(TARGET_CRYPTFS_HW_PATH)
+LOCAL_CFLAGS += -DCONFIG_HW_DISK_ENCRYPTION
+endif
+
 include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -109,14 +119,12 @@ LOCAL_C_INCLUDES := $(common_c_includes)
 LOCAL_CFLAGS := $(vold_cflags)
 LOCAL_CONLYFLAGS := $(vold_conlyflags)
 
-ifeq ($(TARGET_HW_DISK_ENCRYPTION),true)
-LOCAL_C_INCLUDES += $(TARGET_CRYPTFS_HW_PATH)
-common_shared_libraries += libcryptfs_hw
-LOCAL_CFLAGS += -DCONFIG_HW_DISK_ENCRYPTION
-endif
-
 LOCAL_SHARED_LIBRARIES := $(common_shared_libraries)
 LOCAL_STATIC_LIBRARIES := libvold $(common_static_libraries)
+
+ifeq ($(TARGET_HW_DISK_ENCRYPTION),true)
+LOCAL_SHARED_LIBRARIES += libcryptfs_hw
+endif
 
 include $(BUILD_EXECUTABLE)
 
@@ -141,8 +149,10 @@ LOCAL_MODULE:= secdiscard
 LOCAL_SHARED_LIBRARIES := libcutils
 LOCAL_CFLAGS := $(vold_cflags)
 LOCAL_CONLYFLAGS := $(vold_conlyflags)
+
 include $(BUILD_EXECUTABLE)
 
+include $(CLEAR_VARS)
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 LOCAL_MODULE := libminivold_static
 LOCAL_CLANG := true
